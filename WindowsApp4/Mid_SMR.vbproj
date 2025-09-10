@@ -110,18 +110,13 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\Debug\ACCPAC.Advantage.Types.dll</HintPath>
     </Reference>
-    <Reference Include="Azure.Core, Version=1.44.1.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
-      <HintPath>..\packages\Azure.Core.1.44.1\lib\net472\Azure.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Interop.AccpacCOMAPI, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Interop.AccpacCOMAPI">
+      <HintPath>C:\Users\Kira\Desktop\SCA_AR_Invoice\SCA_AR_Invoice\bin\Debug\Interop.AccpacCOMAPI.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
-      <HintPath>bin\Debug\Interop.AccpacCOMAPI.dll</HintPath>
     </Reference>
-    <Reference Include="Interop.AccpacSignonManager, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Interop.AccpacSignonManager">
+      <HintPath>C:\Users\Kira\Desktop\SCA_AR_Invoice\SCA_AR_Invoice\bin\Debug\Interop.AccpacSignonManager.dll</HintPath>
       <EmbedInteropTypes>True</EmbedInteropTypes>
-      <HintPath>bin\Debug\Interop.AccpacSignonManager.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
