@@ -260,6 +260,12 @@
     <Compile Include="GL Batch\frmExcelToGL.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="IC Inventory\Form1.Designer.vb">
+      <DependentUpon>Form1.vb</DependentUpon>
+    </Compile>
+    <Compile Include="IC Inventory\Form1.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="IC Inventory\frmICReceipt.Designer.vb">
       <DependentUpon>frmICReceipt.vb</DependentUpon>
     </Compile>
