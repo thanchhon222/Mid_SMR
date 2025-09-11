@@ -1,4 +1,4 @@
-﻿'Imports ACCPAC.Advantage.Session
+﻿Imports ACCPAC.Advantage.Session
 Imports ACCPAC.Advantage
 Imports Mid_SMR.SQLGetData
 Imports AccpacCOMAPI

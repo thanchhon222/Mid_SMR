@@ -37,6 +37,7 @@ Partial Class frmICReceipt
         Me.Label4 = New System.Windows.Forms.Label()
         Me.Label5 = New System.Windows.Forms.Label()
         Me.B_browse = New System.Windows.Forms.Button()
+        Me.btn_export_template_excel = New System.Windows.Forms.Button()
         CType(Me.dgDetail, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -177,11 +178,25 @@ Partial Class frmICReceipt
         Me.B_browse.Text = "Browse..."
         Me.B_browse.UseVisualStyleBackColor = True
         '
+        'btn_export_template_excel
+        '
+        Me.btn_export_template_excel.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.btn_export_template_excel.BackColor = System.Drawing.Color.White
+        Me.btn_export_template_excel.Font = New System.Drawing.Font("Tahoma", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btn_export_template_excel.Location = New System.Drawing.Point(610, 69)
+        Me.btn_export_template_excel.Margin = New System.Windows.Forms.Padding(2)
+        Me.btn_export_template_excel.Name = "btn_export_template_excel"
+        Me.btn_export_template_excel.Size = New System.Drawing.Size(119, 32)
+        Me.btn_export_template_excel.TabIndex = 134
+        Me.btn_export_template_excel.Text = "Template Excel"
+        Me.btn_export_template_excel.UseVisualStyleBackColor = False
+        '
         'frmICReceipt
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(855, 494)
+        Me.Controls.Add(Me.btn_export_template_excel)
         Me.Controls.Add(Me.Label5)
         Me.Controls.Add(Me.Label4)
         Me.Controls.Add(Me.Label3)
@@ -220,4 +235,5 @@ Partial Class frmICReceipt
     Friend WithEvents Label4 As Label
     Friend WithEvents Label5 As Label
     Friend WithEvents B_browse As Button
+    Friend WithEvents btn_export_template_excel As Button
 End Class

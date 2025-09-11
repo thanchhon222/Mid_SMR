@@ -38,6 +38,7 @@ Partial Class Internal_Usage
         Me.OpenFileDialog1 = New System.Windows.Forms.OpenFileDialog()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.TextBox4 = New System.Windows.Forms.TextBox()
+        Me.btn_export_template_excel = New System.Windows.Forms.Button()
         CType(Me.dgDetail, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -189,12 +190,26 @@ Partial Class Internal_Usage
         Me.TextBox4.Size = New System.Drawing.Size(204, 20)
         Me.TextBox4.TabIndex = 134
         '
+        'btn_export_template_excel
+        '
+        Me.btn_export_template_excel.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.btn_export_template_excel.BackColor = System.Drawing.Color.White
+        Me.btn_export_template_excel.Font = New System.Drawing.Font("Tahoma", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btn_export_template_excel.Location = New System.Drawing.Point(615, 91)
+        Me.btn_export_template_excel.Margin = New System.Windows.Forms.Padding(2)
+        Me.btn_export_template_excel.Name = "btn_export_template_excel"
+        Me.btn_export_template_excel.Size = New System.Drawing.Size(119, 32)
+        Me.btn_export_template_excel.TabIndex = 136
+        Me.btn_export_template_excel.Text = "Template Excel"
+        Me.btn_export_template_excel.UseVisualStyleBackColor = False
+        '
         'Internal_Usage
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.ClientSize = New System.Drawing.Size(855, 494)
+        Me.Controls.Add(Me.btn_export_template_excel)
         Me.Controls.Add(Me.Label1)
         Me.Controls.Add(Me.TextBox4)
         Me.Controls.Add(Me.B_browse)
@@ -235,4 +250,5 @@ Partial Class Internal_Usage
     Friend WithEvents OpenFileDialog1 As OpenFileDialog
     Friend WithEvents Label1 As Label
     Friend WithEvents TextBox4 As TextBox
+    Friend WithEvents btn_export_template_excel As Button
 End Class

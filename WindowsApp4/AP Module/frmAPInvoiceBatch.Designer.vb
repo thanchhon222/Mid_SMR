@@ -32,6 +32,7 @@ Partial Class AP_Invoice_Batch
         Me.Label1 = New System.Windows.Forms.Label()
         Me.Label4 = New System.Windows.Forms.Label()
         Me.DateTimePicker1 = New System.Windows.Forms.DateTimePicker()
+        Me.btn_export_template_excel = New System.Windows.Forms.Button()
         CType(Me.dgDetail, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -43,13 +44,13 @@ Partial Class AP_Invoice_Batch
         Me.TxtBrowse.Location = New System.Drawing.Point(116, 10)
         Me.TxtBrowse.Margin = New System.Windows.Forms.Padding(2)
         Me.TxtBrowse.Name = "TxtBrowse"
-        Me.TxtBrowse.Size = New System.Drawing.Size(394, 23)
+        Me.TxtBrowse.Size = New System.Drawing.Size(382, 23)
         Me.TxtBrowse.TabIndex = 2
         '
         'Button1
         '
         Me.Button1.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.Button1.Location = New System.Drawing.Point(517, 10)
+        Me.Button1.Location = New System.Drawing.Point(507, 10)
         Me.Button1.Margin = New System.Windows.Forms.Padding(2)
         Me.Button1.Name = "Button1"
         Me.Button1.Size = New System.Drawing.Size(93, 23)
@@ -62,7 +63,7 @@ Partial Class AP_Invoice_Batch
         Me.BtnImport.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.BtnImport.BackColor = System.Drawing.Color.White
         Me.BtnImport.Font = New System.Drawing.Font("Tahoma", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.BtnImport.Location = New System.Drawing.Point(856, 37)
+        Me.BtnImport.Location = New System.Drawing.Point(908, 37)
         Me.BtnImport.Margin = New System.Windows.Forms.Padding(2)
         Me.BtnImport.Name = "BtnImport"
         Me.BtnImport.Size = New System.Drawing.Size(104, 32)
@@ -89,7 +90,7 @@ Partial Class AP_Invoice_Batch
         Me.TxtDescription.Location = New System.Drawing.Point(116, 46)
         Me.TxtDescription.Margin = New System.Windows.Forms.Padding(2)
         Me.TxtDescription.Name = "TxtDescription"
-        Me.TxtDescription.Size = New System.Drawing.Size(494, 23)
+        Me.TxtDescription.Size = New System.Drawing.Size(487, 23)
         Me.TxtDescription.TabIndex = 17
         '
         'dgDetail
@@ -107,7 +108,7 @@ Partial Class AP_Invoice_Batch
         Me.dgDetail.ReadOnly = True
         Me.dgDetail.RowHeadersWidth = 51
         Me.dgDetail.RowTemplate.Height = 24
-        Me.dgDetail.Size = New System.Drawing.Size(947, 393)
+        Me.dgDetail.Size = New System.Drawing.Size(999, 400)
         Me.dgDetail.TabIndex = 20
         '
         'Label1
@@ -126,7 +127,7 @@ Partial Class AP_Invoice_Batch
         Me.Label4.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.Label4.AutoSize = True
         Me.Label4.Font = New System.Drawing.Font("Microsoft Sans Serif", 10.2!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.Label4.Location = New System.Drawing.Point(632, 16)
+        Me.Label4.Location = New System.Drawing.Point(616, 16)
         Me.Label4.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         Me.Label4.Name = "Label4"
         Me.Label4.Size = New System.Drawing.Size(117, 17)
@@ -139,17 +140,31 @@ Partial Class AP_Invoice_Batch
         Me.DateTimePicker1.CalendarFont = New System.Drawing.Font("Microsoft Sans Serif", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.DateTimePicker1.Font = New System.Drawing.Font("Microsoft Sans Serif", 10.2!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.DateTimePicker1.Format = System.Windows.Forms.DateTimePickerFormat.[Short]
-        Me.DateTimePicker1.Location = New System.Drawing.Point(635, 44)
+        Me.DateTimePicker1.Location = New System.Drawing.Point(619, 44)
         Me.DateTimePicker1.Margin = New System.Windows.Forms.Padding(2)
         Me.DateTimePicker1.Name = "DateTimePicker1"
         Me.DateTimePicker1.Size = New System.Drawing.Size(151, 23)
         Me.DateTimePicker1.TabIndex = 29
         '
+        'btn_export_template_excel
+        '
+        Me.btn_export_template_excel.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.btn_export_template_excel.BackColor = System.Drawing.Color.White
+        Me.btn_export_template_excel.Font = New System.Drawing.Font("Tahoma", 8.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btn_export_template_excel.Location = New System.Drawing.Point(781, 37)
+        Me.btn_export_template_excel.Margin = New System.Windows.Forms.Padding(2)
+        Me.btn_export_template_excel.Name = "btn_export_template_excel"
+        Me.btn_export_template_excel.Size = New System.Drawing.Size(119, 32)
+        Me.btn_export_template_excel.TabIndex = 31
+        Me.btn_export_template_excel.Text = "Template Excel"
+        Me.btn_export_template_excel.UseVisualStyleBackColor = False
+        '
         'AP_Invoice_Batch
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(971, 510)
+        Me.ClientSize = New System.Drawing.Size(1023, 517)
+        Me.Controls.Add(Me.btn_export_template_excel)
         Me.Controls.Add(Me.Label4)
         Me.Controls.Add(Me.DateTimePicker1)
         Me.Controls.Add(Me.Label1)
@@ -179,4 +194,5 @@ Partial Class AP_Invoice_Batch
     Friend WithEvents Label1 As Label
     Friend WithEvents Label4 As Label
     Friend WithEvents DateTimePicker1 As DateTimePicker
+    Friend WithEvents btn_export_template_excel As Button
 End Class

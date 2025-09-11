@@ -199,4 +199,44 @@ Public Class frmExcelToGL
 
     End Sub
 
+    Private Sub btn_export_template_excel_Click(sender As Object, e As EventArgs) Handles btn_export_template_excel.Click
+        Try
+            ' Create a new SaveFileDialog to let the user choose where to save the Excel file
+            Dim sfd As New SaveFileDialog
+            sfd.Filter = "Excel Files (*.xlsx)|*.xlsx"
+            sfd.FileName = "Excel_ToGL.xlsx"
+            sfd.Title = "Save Excel Template"
+
+            If sfd.ShowDialog = DialogResult.OK Then
+                ' Use ClosedXML to create an Excel file
+                Using wb As New ClosedXML.Excel.XLWorkbook()
+                    Dim ws As ClosedXML.Excel.IXLWorksheet = wb.Worksheets.Add("Invoice Template")
+
+                    ' Define the headers based on the provided structure
+                    Dim headers As String() = {"NO", "H_Date", "H_JournalDes", "D_Ref", "D_Desc", "D_Account", "D_Debit", "D_Credit"}
+
+                    ' Write headers to the first row
+                    For colIndex As Integer = 0 To headers.Length - 1
+                        ws.Cell(1, colIndex + 1).Value = headers(colIndex)
+                    Next
+
+                    ' Optional: Format the header row
+                    Dim headerRange = ws.Range(1, 1, 1, headers.Length)
+                    headerRange.Style.Font.Bold = True
+                    headerRange.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightBlue
+                    headerRange.Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center
+
+                    ' Auto-adjust column widths based on content
+                    ws.Columns().AdjustToContents()
+
+                    ' Save the workbook to the selected file path
+                    wb.SaveAs(sfd.FileName)
+
+                    MessageBox.Show("Excel template exported successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                End Using
+            End If
+        Catch ex As Exception
+            MessageBox.Show("Error exporting template: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
 End Class
