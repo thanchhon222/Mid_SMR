@@ -69,7 +69,6 @@ Partial Class frmLogin
         Me.TextBox2.PasswordChar = Global.Microsoft.VisualBasic.ChrW(42)
         Me.TextBox2.Size = New System.Drawing.Size(212, 26)
         Me.TextBox2.TabIndex = 1
-        Me.TextBox2.Text = "Admin@1234"
         '
         'Button2
         '
