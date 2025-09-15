@@ -1,10 +1,11 @@
 ﻿Imports System.Data.OleDb
-Imports System.Reflection.Emit
 Imports System.Text
 Imports ACCPAC.Advantage
+Imports ClosedXML.Excel
 Imports AccpacCOMAPI
 Imports Mid_SMR.Read
 Imports Mid_SMR.SQLGetData
+
 Public Class Internal_Usage
 
     Public Shared SageSess As New ACCPAC.Advantage.Session
@@ -12,7 +13,6 @@ Public Class Internal_Usage
     Public Property Password = frmLogin.TextBox2.Text
 
     Private Sub btnPostSage_Click(sender As Object, e As EventArgs) Handles btnPostSage.Click
-
         If dgDetail.RowCount <= 0 Then
             MsgBox("No transactions found.", MsgBoxStyle.Information, "Alert")
             Exit Sub
@@ -34,7 +34,6 @@ Public Class Internal_Usage
             SageSess.Init("", "XY", "XY1000", "72A")
             SageSess.Open(Username, Password, ReadConnectionNotedPage.DBName_St, Today, 0)
 
-            '   FFDsageSess.Open(UCase(frmLogin.txt_UserName.Text.Trim()), UCase(frmLogin.txt_frmLogin.Text.Trim()), (Form1.TextBox2.Text.Trim()), Today, 0)
             Dim mDBLinkCmpRW As DBLink
             mDBLinkCmpRW = SageSess.OpenDBLink(DBLinkType.Company, DBLinkFlags.ReadWrite)
 
@@ -53,7 +52,6 @@ Public Class Internal_Usage
             ICICE1detail5.Compose(New View() {ICICE1detail1})
             ICICE1header.Init()
 
-
             With ICICE1header.Fields
                 .FieldByName("TRANSDATE").SetValue(dt1.Value.ToString("dd-MMM-yy"), True)
                 .FieldByName("HDRDESC").SetValue(TextBox3.Text.Trim(), False)
@@ -64,30 +62,18 @@ Public Class Internal_Usage
                 Dim i As Integer
 
                 For i = 0 To dgDetail.Rows.Count - 1
-
                     ICICE1detail1.RecordCreate(0)
-
-                    'Dim itemCode As String = dgDetail.Rows(i).Cells(1).Value?.ToString()?.Trim()
-                    'Dim glAccount As String = dgDetail.Rows(i).Cells(4).Value?.ToString()?.Trim()
-
-                    ' itemCode = itemCode.Replace("-", "")
-                    ' glAccount = glAccount.Replace("-", "")
-
-                    '.FieldByName("ITEMNO").SetValue(itemCode, False)
                     .FieldByName("ITEMNO").SetValue(dgDetail.Rows(i).Cells(1).Value.ToString, False)
-                    .FieldByName("LOCATION").SetValue(dgDetail.Rows(i).Cells(3).Value.ToString, False)     ' Location
+                    .FieldByName("LOCATION").SetValue(dgDetail.Rows(i).Cells(3).Value.ToString, False)
                     .FieldByName("GLACCT").SetValue(dgDetail.Rows(i).Cells(4).Value.ToString, False)
-                    '.FieldByName("GLACCT").SetValue(glAccount, False)
                     .FieldByName("QUANTITY").SetValue(dgDetail.Rows(i).Cells(5).Value.ToString, False)
                     .FieldByName("COMMENTS").SetValue(dgDetail.Rows(i).Cells(6).Value.ToString, False)
 
                     ICICE1detail1.Process()
                     ICICE1detail1.Insert()
-
                 Next
-                'ICICE1detail1.Insert()
             End With
-            ICICE1header.Fields.FieldByName("STATUS").SetValue("1", False)             ' Record Status
+            ICICE1header.Fields.FieldByName("STATUS").SetValue("1", False)
             ICICE1header.Insert()
 
             MsgBox("Import internal usage completed.", MsgBoxStyle.Information, "Alert")
@@ -107,6 +93,7 @@ Public Class Internal_Usage
             'End If
         End Try
     End Sub
+
     Private Sub HandleACCPACError(ex As Exception)
         If SageSess IsNot Nothing AndAlso SageSess.Errors IsNot Nothing Then
             Dim errorMessage As New StringBuilder()
@@ -125,74 +112,99 @@ Public Class Internal_Usage
     Private Function ValidateSageData() As Boolean
         Dim missingItems As New List(Of String)
         Dim missingAccounts As New List(Of String)
+        Dim missingQuantities As New List(Of String)
         Dim isValid As Boolean = True
 
-        ' Clear previous highlighting
+        ' Clear previous highlighting and error messages
         For Each row As DataGridViewRow In dgDetail.Rows
             If Not row.IsNewRow Then
                 row.DefaultCellStyle.BackColor = Color.White
+                row.Cells(1).Style.BackColor = Color.White ' ItemCode
+                row.Cells(4).Style.BackColor = Color.White ' AccountNumber
+                row.Cells(5).Style.BackColor = Color.White ' Quantity
+                If dgDetail.Columns.Contains("Error") Then
+                    row.Cells("Error").Value = ""
+                End If
             End If
         Next
 
         Try
-            ' Check each row in the DataGridView
             For i As Integer = 0 To dgDetail.Rows.Count - 1
                 Dim row As DataGridViewRow = dgDetail.Rows(i)
-
-                ' Skip empty rows
                 If row.IsNewRow Then Continue For
 
-                Dim rowNumber As Integer = i + 1 ' Convert to 1-based indexing for user display
+                Dim rowNumber As Integer = i + 1
                 Dim hasError As Boolean = False
+                Dim errorMessage As New StringBuilder()
 
-                ' Check ItemCode (assuming column index 1 for ItemCode)
                 Dim itemCode As String = If(row.Cells(1).Value IsNot Nothing, row.Cells(1).Value.ToString().Trim(), "")
-                If Not String.IsNullOrEmpty(itemCode) Then
-                    ' Remove hyphens from ItemCode for Sage comparison
+                If String.IsNullOrEmpty(itemCode) Then
+                    errorMessage.AppendLine("Missing ItemCode")
+                    row.Cells(1).Style.BackColor = Color.LightPink
+                    hasError = True
+                    isValid = False
+                    missingItems.Add($"Row {rowNumber}: ItemCode is missing")
+                Else
                     Dim sageItemCode As String = itemCode.Replace("-", "")
                     Dim itemCheckDt As DataTable = SQL_GetTable_St("SELECT ITEMNO FROM ICITEM WHERE ITEMNO = '" & sageItemCode.Replace("'", "''") & "'")
                     If itemCheckDt.Rows.Count = 0 Then
-                        missingItems.Add($"Row {rowNumber}: {itemCode} (Sage expects: {sageItemCode})")
+                        errorMessage.AppendLine($"ItemCode '{itemCode}' not found in Sage")
+                        row.Cells(1).Style.BackColor = Color.LightPink
                         hasError = True
                         isValid = False
+                        missingItems.Add($"Row {rowNumber}: ItemCode '{itemCode}' not found")
                     End If
-                Else
-                    missingItems.Add($"Row {rowNumber}: (Empty ItemCode)")
-                    hasError = True
-                    isValid = False
                 End If
 
-                ' Check Account Number (assuming column index 4 for account)
                 Dim accountNumber As String = If(row.Cells(4).Value IsNot Nothing, row.Cells(4).Value.ToString().Trim(), "")
-                If Not String.IsNullOrEmpty(accountNumber) Then
-                    ' Remove hyphens from Account Number for Sage comparison
+                If String.IsNullOrEmpty(accountNumber) Then
+                    errorMessage.AppendLine("Missing AccountCode")
+                    row.Cells(4).Style.BackColor = Color.LightPink
+                    hasError = True
+                    isValid = False
+                    missingAccounts.Add($"Row {rowNumber}: AccountCode is missing")
+                Else
                     Dim sageAccountNumber As String = accountNumber.Replace("-", "")
                     Dim glCheckDt As DataTable = SQL_GetTable_St("SELECT ACCTID FROM GLAMF WHERE ACCTID = '" & sageAccountNumber.Replace("'", "''") & "'")
                     If glCheckDt.Rows.Count = 0 Then
-                        missingAccounts.Add($"Row {rowNumber}: {accountNumber} (Sage expects: {sageAccountNumber})")
+                        errorMessage.AppendLine($"AccountCode '{accountNumber}' not found in Sage")
+                        row.Cells(4).Style.BackColor = Color.LightPink
                         hasError = True
                         isValid = False
+                        missingAccounts.Add($"Row {rowNumber}: AccountCode '{accountNumber}' not found")
                     End If
-                Else
-                    missingAccounts.Add($"Row {rowNumber}: (Empty Account)")
-                    hasError = True
-                    isValid = False
                 End If
 
-                ' Highlight row if it has errors
-                If hasError Then
-                    row.DefaultCellStyle.BackColor = Color.LightPink
+                Dim quantity As String = If(row.Cells(5).Value IsNot Nothing, row.Cells(5).Value.ToString().Trim(), "")
+                If String.IsNullOrEmpty(quantity) Then
+                    errorMessage.AppendLine("Missing Quantity")
+                    row.Cells(5).Style.BackColor = Color.LightPink
+                    hasError = True
+                    isValid = False
+                    missingQuantities.Add($"Row {rowNumber}: Quantity is missing")
+                Else
+                    Dim qtyValue As Decimal
+                    If Not Decimal.TryParse(quantity, qtyValue) OrElse qtyValue <= 0 Then
+                        errorMessage.AppendLine("Invalid Quantity (must be > 0)")
+                        row.Cells(5).Style.BackColor = Color.LightPink
+                        hasError = True
+                        isValid = False
+                        missingQuantities.Add($"Row {rowNumber}: Invalid Quantity '{quantity}'")
+                    End If
+                End If
+
+                If hasError AndAlso dgDetail.Columns.Contains("Error") Then
+                    row.Cells("Error").Value = errorMessage.ToString().Trim()
                 End If
             Next
 
-            ' Show error messages if any missing items/accounts found
-            If missingItems.Count > 0 OrElse missingAccounts.Count > 0 Then
+            If missingItems.Count > 0 OrElse missingAccounts.Count > 0 OrElse missingQuantities.Count > 0 Then
                 Dim errorMessage As New StringBuilder()
                 errorMessage.AppendLine("Validation failed! Please correct the following issues:")
 
                 If missingItems.Count > 0 Then
                     errorMessage.AppendLine()
-                    errorMessage.AppendLine("Missing Item Codes in Sage:")
+                    errorMessage.AppendLine("Missing/Invalid Item Codes:")
                     For Each item In missingItems
                         errorMessage.AppendLine($"- {item}")
                     Next
@@ -200,17 +212,38 @@ Public Class Internal_Usage
 
                 If missingAccounts.Count > 0 Then
                     errorMessage.AppendLine()
-                    errorMessage.AppendLine("Missing Chart of Accounts in Sage:")
+                    errorMessage.AppendLine("Missing/Invalid Account Codes:")
                     For Each account In missingAccounts
                         errorMessage.AppendLine($"- {account}")
                     Next
                 End If
 
+                If missingQuantities.Count > 0 Then
+                    errorMessage.AppendLine()
+                    errorMessage.AppendLine("Missing/Invalid Quantities:")
+                    For Each qty In missingQuantities
+                        errorMessage.AppendLine($"- {qty}")
+                    Next
+                End If
+
                 errorMessage.AppendLine()
-                errorMessage.AppendLine("Note: Rows with errors are highlighted in pink.")
+                errorMessage.AppendLine("Note: Cells with errors are highlighted in pink.")
                 errorMessage.AppendLine("Sage stores codes without hyphens. Your data contains hyphens that will be automatically removed during posting.")
 
                 MessageBox.Show(errorMessage.ToString(), "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+
+                For Each row As DataGridViewRow In dgDetail.Rows
+                    If Not row.IsNewRow Then
+                        For Each cell As DataGridViewCell In row.Cells
+                            If cell.Style.BackColor = Color.LightPink Then
+                                dgDetail.CurrentCell = cell
+                                dgDetail.BeginEdit(True)
+                                Exit For
+                            End If
+                        Next
+                        If dgDetail.IsCurrentCellInEditMode Then Exit For
+                    End If
+                Next
             End If
 
         Catch ex As Exception
@@ -220,45 +253,38 @@ Public Class Internal_Usage
 
         Return isValid
     End Function
+
     Private Function CheckStockAvailability() As Boolean
         Dim outOfStockItems As New List(Of String)
         Dim isValid As Boolean = True
 
         Try
-            ' Clear previous stock highlighting
             For Each row As DataGridViewRow In dgDetail.Rows
                 If Not row.IsNewRow Then
-                    ' Only remove orange highlighting (keep pink for validation errors)
                     If row.DefaultCellStyle.BackColor = Color.Orange Then
                         row.DefaultCellStyle.BackColor = Color.White
+                    End If
+                    If row.Cells(5).Style.BackColor = Color.LightCoral Then
+                        row.Cells(5).Style.BackColor = Color.White
                     End If
                 End If
             Next
 
-            ' Check each row in the DataGridView
             For i As Integer = 0 To dgDetail.Rows.Count - 1
                 Dim row As DataGridViewRow = dgDetail.Rows(i)
-
-                ' Skip empty rows
                 If row.IsNewRow Then Continue For
 
-                Dim rowNumber As Integer = i + 1 ' Convert to 1-based indexing for user display
-
-                ' Get ItemCode and Location
+                Dim rowNumber As Integer = i + 1
                 Dim itemCode As String = If(row.Cells(1).Value IsNot Nothing, row.Cells(1).Value.ToString().Trim(), "")
                 Dim location As String = If(row.Cells(3).Value IsNot Nothing, row.Cells(3).Value.ToString().Trim(), "")
                 Dim quantity As Decimal = 0
                 Decimal.TryParse(If(row.Cells(5).Value IsNot Nothing, row.Cells(5).Value.ToString().Trim(), "0"), quantity)
 
                 If Not String.IsNullOrEmpty(itemCode) AndAlso Not String.IsNullOrEmpty(location) AndAlso quantity > 0 Then
-                    ' Remove hyphens from ItemCode for Sage comparison
                     Dim sageItemCode As String = itemCode.Replace("-", "")
-
-                    ' Check stock availability in Sage
                     Dim stockQuery As String = "SELECT QTYONHAND FROM ICILOC " &
                                           "WHERE ITEMNO = '" & sageItemCode.Replace("'", "''") & "' " &
                                           "AND LOCATION = '" & location.Replace("'", "''") & "'"
-
                     Dim stockCheckDt As DataTable = SQL_GetTable_St(stockQuery)
 
                     If stockCheckDt.Rows.Count > 0 Then
@@ -268,33 +294,51 @@ Public Class Internal_Usage
                         If qtyOnHand < quantity Then
                             outOfStockItems.Add($"Row {rowNumber}: {itemCode} at {location} (Available: {qtyOnHand}, Required: {quantity})")
                             isValid = False
-
-                            ' Highlight the row in orange for stock issues
-                            row.DefaultCellStyle.BackColor = Color.Orange
+                            row.Cells(5).Style.BackColor = Color.LightCoral
+                            If dgDetail.Columns.Contains("Error") Then
+                                Dim currentError As String = If(row.Cells("Error").Value IsNot Nothing, row.Cells("Error").Value.ToString(), "")
+                                If Not String.IsNullOrEmpty(currentError) Then
+                                    currentError += Environment.NewLine
+                                End If
+                                row.Cells("Error").Value = currentError + $"Insufficient stock in Quantity cell: Available {qtyOnHand}, Required {quantity}"
+                            End If
                         End If
                     Else
-                        ' Item-location combination not found
                         outOfStockItems.Add($"Row {rowNumber}: {itemCode} not found at location {location}")
                         isValid = False
-                        row.DefaultCellStyle.BackColor = Color.Orange
+                        row.Cells(5).Style.BackColor = Color.LightCoral
+                        If dgDetail.Columns.Contains("Error") Then
+                            Dim currentError As String = If(row.Cells("Error").Value IsNot Nothing, row.Cells("Error").Value.ToString(), "")
+                            If Not String.IsNullOrEmpty(currentError) Then
+                                currentError += Environment.NewLine
+                            End If
+                            row.Cells("Error").Value = currentError + "Item not found at specified location in Quantity cell"
+                        End If
                     End If
                 End If
             Next
 
-            ' Show error messages if any out-of-stock items found
             If outOfStockItems.Count > 0 Then
                 Dim errorMessage As New StringBuilder()
                 errorMessage.AppendLine("Insufficient stock! The following items cannot be posted:")
-
                 For Each item In outOfStockItems
                     errorMessage.AppendLine($"- {item}")
                 Next
-
                 errorMessage.AppendLine()
-                errorMessage.AppendLine("Rows with stock issues are highlighted in orange.")
-                errorMessage.AppendLine("Please adjust quantities or locations before posting.")
+                errorMessage.AppendLine("Cells with stock issues are highlighted in coral.")
+                errorMessage.AppendLine("Please adjust the Quantity cell (highlighted) before posting.")
 
                 MessageBox.Show(errorMessage.ToString(), "Stock Check Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+
+                For Each row As DataGridViewRow In dgDetail.Rows
+                    If Not row.IsNewRow Then
+                        If row.Cells(5).Style.BackColor = Color.LightCoral Then
+                            dgDetail.CurrentCell = row.Cells(5)
+                            dgDetail.BeginEdit(True)
+                            Exit For
+                        End If
+                    End If
+                Next
             End If
 
         Catch ex As Exception
@@ -306,7 +350,6 @@ Public Class Internal_Usage
     End Function
 
     Private Sub Internal_Usage_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-
         For f As Integer = 0 To dgDetail.Rows.Count - 1
             Dim num As Integer = Val(dgDetail.Rows(f).Cells(11).Value)
             If num <= 0 Then
@@ -322,11 +365,67 @@ Public Class Internal_Usage
         End If
     End Sub
 
-    ' Add these event handlers to your form
+    Private Sub B_browse_Click(sender As Object, e As EventArgs) Handles B_browse.Click
+        OpenFileDialog1.Filter = "Excel Files|*.xls;*.xlsx"
 
-    ' Validate Quantity to ensure it's a positive number
+        If OpenFileDialog1.ShowDialog() = DialogResult.OK Then
+            TextBox1.Text = OpenFileDialog1.FileName
+
+            Try
+                Dim connStr As String = ""
+                Dim filePath As String = TextBox1.Text.Trim()
+
+                If filePath.EndsWith(".xls") Then
+                    connStr = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & filePath & ";Extended Properties='Excel 8.0;HDR=YES;'"
+                ElseIf filePath.EndsWith(".xlsx") Then
+                    connStr = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & filePath & ";Extended Properties='Excel 12.0 Xml;HDR=YES;'"
+                Else
+                    MessageBox.Show("Unsupported file type. Please select an Excel file (.xls or .xlsx).", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    Exit Sub
+                End If
+
+                Dim sheetName As String = ""
+                Using conn As New OleDbConnection(connStr)
+                    conn.Open()
+                    Dim dtSheet As DataTable = conn.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, Nothing)
+                    sheetName = dtSheet.Rows(0)("TABLE_NAME").ToString()
+                    conn.Close()
+                End Using
+
+                Dim da As New OleDbDataAdapter("SELECT * FROM [" & sheetName & "] WHERE ItemCode <> ''", connStr)
+                Dim ds As New DataSet()
+                da.Fill(ds)
+
+                If ds.Tables.Count > 0 Then
+                    dgDetail.DataSource = Nothing
+                    dgDetail.Columns.Clear()
+                    dgDetail.DataSource = ds.Tables(0)
+                    SetupDataGridViewEditableColumns()
+                    If Not dgDetail.Columns.Contains("Error") Then
+                        Dim errorColumn As New DataGridViewTextBoxColumn()
+                        errorColumn.Name = "Error"
+                        errorColumn.HeaderText = "Error Messages"
+                        errorColumn.ReadOnly = True
+                        errorColumn.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                        dgDetail.Columns.Add(errorColumn)
+                    End If
+                    For i As Integer = 0 To dgDetail.Rows.Count - 1
+                        If Not dgDetail.Rows(i).IsNewRow Then
+                            ValidateRow(i)
+                        End If
+                    Next
+                    MessageBox.Show("Data loaded successfully from " & filePath, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Else
+                    MessageBox.Show("No data found in the Excel file.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                End If
+
+            Catch ex As Exception
+                MessageBox.Show("Error loading data: " & ex.Message & Environment.NewLine & "Ensure the file is not open in another program and try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End If
+    End Sub
+
     Private Sub dgDetail_CellValidating(sender As Object, e As DataGridViewCellValidatingEventArgs) Handles dgDetail.CellValidating
-        ' Check if it's the Quantity column (adjust index as needed)
         If e.ColumnIndex = 5 OrElse (dgDetail.Columns.Count > e.ColumnIndex AndAlso dgDetail.Columns(e.ColumnIndex).Name = "Quantity") Then
             Dim newValue As String = e.FormattedValue.ToString()
             If Not String.IsNullOrEmpty(newValue) Then
@@ -339,88 +438,108 @@ Public Class Internal_Usage
         End If
     End Sub
 
-    ' Provide visual feedback when editing editable cells
     Private Sub dgDetail_CellBeginEdit(sender As Object, e As DataGridViewCellCancelEventArgs) Handles dgDetail.CellBeginEdit
         If e.RowIndex >= 0 AndAlso e.ColumnIndex >= 0 Then
             Dim column As DataGridViewColumn = dgDetail.Columns(e.ColumnIndex)
             If Not column.ReadOnly Then
-                ' Change background color when editing editable cells
                 dgDetail.Rows(e.RowIndex).Cells(e.ColumnIndex).Style.BackColor = Color.LightYellow
             Else
-                ' Prevent editing of read-only cells
                 e.Cancel = True
             End If
         End If
     End Sub
 
-    ' Restore normal background color after editing
     Private Sub dgDetail_CellEndEdit(sender As Object, e As DataGridViewCellEventArgs) Handles dgDetail.CellEndEdit
         If e.RowIndex >= 0 AndAlso e.ColumnIndex >= 0 Then
             dgDetail.Rows(e.RowIndex).Cells(e.ColumnIndex).Style.BackColor = Color.White
+            ValidateRow(e.RowIndex)
         End If
     End Sub
 
-    ' Optional: Double-click to edit for better usability
+    Private Sub ValidateRow(rowIndex As Integer)
+        If rowIndex < 0 OrElse rowIndex >= dgDetail.Rows.Count OrElse dgDetail.Rows(rowIndex).IsNewRow Then
+            Return
+        End If
+
+        Dim row As DataGridViewRow = dgDetail.Rows(rowIndex)
+        Dim errorMessage As New StringBuilder()
+        Dim hasError As Boolean = False
+
+        If dgDetail.Columns.Contains("Error") Then
+            row.Cells("Error").Value = ""
+        End If
+        row.Cells(1).Style.BackColor = Color.White
+        row.Cells(4).Style.BackColor = Color.White
+        row.Cells(5).Style.BackColor = Color.White
+
+        Dim itemCode As String = If(row.Cells(1).Value IsNot Nothing, row.Cells(1).Value.ToString().Trim(), "")
+        If String.IsNullOrEmpty(itemCode) Then
+            errorMessage.AppendLine("Missing ItemCode")
+            row.Cells(1).Style.BackColor = Color.LightPink
+            hasError = True
+        End If
+
+        Dim accountNumber As String = If(row.Cells(4).Value IsNot Nothing, row.Cells(4).Value.ToString().Trim(), "")
+        If String.IsNullOrEmpty(accountNumber) Then
+            errorMessage.AppendLine("Missing AccountCode")
+            row.Cells(4).Style.BackColor = Color.LightPink
+            hasError = True
+        End If
+
+        Dim quantity As String = If(row.Cells(5).Value IsNot Nothing, row.Cells(5).Value.ToString().Trim(), "")
+        If String.IsNullOrEmpty(quantity) Then
+            errorMessage.AppendLine("Missing Quantity")
+            row.Cells(5).Style.BackColor = Color.LightPink
+            hasError = True
+        Else
+            Dim qtyValue As Decimal
+            If Not Decimal.TryParse(quantity, qtyValue) OrElse qtyValue <= 0 Then
+                errorMessage.AppendLine("Invalid Quantity (must be > 0)")
+                row.Cells(5).Style.BackColor = Color.LightPink
+                hasError = True
+            End If
+        End If
+
+        If hasError AndAlso dgDetail.Columns.Contains("Error") Then
+            row.Cells("Error").Value = errorMessage.ToString().Trim()
+        End If
+    End Sub
+
     Private Sub dgDetail_CellDoubleClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgDetail.CellDoubleClick
         If e.RowIndex >= 0 AndAlso e.ColumnIndex >= 0 Then
             Dim column As DataGridViewColumn = dgDetail.Columns(e.ColumnIndex)
             If Not column.ReadOnly Then
+                dgDetail.CurrentCell = dgDetail.Rows(e.RowIndex).Cells(e.ColumnIndex)
                 dgDetail.BeginEdit(True)
             End If
         End If
     End Sub
-    Private Sub btnClose_Click(sender As Object, e As EventArgs) Handles btnClose.Click
-        Me.Close()
+
+    Private Sub dgDetail_CellClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgDetail.CellClick
+        If e.RowIndex >= 0 AndAlso e.ColumnIndex >= 0 Then
+            Dim column As DataGridViewColumn = dgDetail.Columns(e.ColumnIndex)
+            If Not column.ReadOnly AndAlso (dgDetail.Rows(e.RowIndex).Cells(e.ColumnIndex).Style.BackColor = Color.LightPink OrElse
+               dgDetail.Rows(e.RowIndex).Cells(e.ColumnIndex).Style.BackColor = Color.LightCoral) Then
+                dgDetail.CurrentCell = dgDetail.Rows(e.RowIndex).Cells(e.ColumnIndex)
+                dgDetail.BeginEdit(True)
+            End If
+        End If
     End Sub
 
-
-    Private Sub B_browse_Click(sender As Object, e As EventArgs) Handles B_browse.Click
-        OpenFileDialog1.Filter = "Excel Files|*.xls;*.xlsx"
-
-        If OpenFileDialog1.ShowDialog() = DialogResult.OK Then
-            TextBox1.Text = OpenFileDialog1.FileName
-
-            Try
-                Dim connStr As String = ""
-                Dim filePath As String = TextBox1.Text.Trim()
-
-                ' Choose correct provider based on extension
-                If filePath.EndsWith(".xls") Then
-                    connStr = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & filePath & ";Extended Properties='Excel 8.0;HDR=YES;'"
-                ElseIf filePath.EndsWith(".xlsx") Then
-                    connStr = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & filePath & ";Extended Properties='Excel 12.0 Xml;HDR=YES;'"
-                Else
-                    MessageBox.Show("Unsupported file type.")
-                    Exit Sub
-                End If
-
-                ' Get sheet name
-                Dim sheetName As String = ""
-                Using conn As New OleDbConnection(connStr)
-                    conn.Open()
-                    Dim dtSheet As DataTable = conn.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, Nothing)
-                    sheetName = dtSheet.Rows(0)("TABLE_NAME").ToString()
-                    conn.Close()
-                End Using
-
-                ' Read data
-                Dim da As New OleDbDataAdapter("SELECT * FROM [" & sheetName & "] where ItemCode <> ''", connStr)
-                Dim ds As New DataSet()
-                da.Fill(ds)
-
-                If ds.Tables.Count > 0 Then
-                    dgDetail.DataSource = ds.Tables(0)
-
-                    ' Apply Grid View styling and set editable columns
-                    SetupDataGridViewEditableColumns()
-                Else
-                    MessageBox.Show("No data found.")
-                End If
-
-            Catch ex As Exception
-                MessageBox.Show("Error: " & ex.Message)
-            End Try
+    Private Sub dgDetail_CellMouseEnter(sender As Object, e As DataGridViewCellEventArgs) Handles dgDetail.CellMouseEnter
+        If e.RowIndex >= 0 AndAlso e.ColumnIndex >= 0 Then
+            Dim cell As DataGridViewCell = dgDetail.Rows(e.RowIndex).Cells(e.ColumnIndex)
+            If cell.Style.BackColor = Color.LightPink OrElse cell.Style.BackColor = Color.LightCoral Then
+                Dim errorText As String = If(dgDetail.Rows(e.RowIndex).Cells("Error").Value IsNot Nothing, dgDetail.Rows(e.RowIndex).Cells("Error").Value.ToString(), "")
+                cell.ToolTipText = errorText
+            Else
+                cell.ToolTipText = ""
+            End If
         End If
+    End Sub
+
+    Private Sub btnClose_Click(sender As Object, e As EventArgs) Handles btnClose.Click
+        Me.Close()
     End Sub
 
     Private Sub SetupDataGridViewEditableColumns()
@@ -433,28 +552,22 @@ Public Class Internal_Usage
 
             .DefaultCellStyle.BackColor = Color.White
             .AlternatingRowsDefaultCellStyle.BackColor = Color.LightBlue
-
             .DefaultCellStyle.Font = New Font("Segoe UI", 9)
             .DefaultCellStyle.SelectionBackColor = Color.DodgerBlue
             .DefaultCellStyle.SelectionForeColor = Color.White
 
             .RowHeadersVisible = False
             .AllowUserToAddRows = False
-
-            ' Set ReadOnly to False to allow editing
             .ReadOnly = False
 
-            ' Make all columns read-only first
             For Each column As DataGridViewColumn In .Columns
                 column.ReadOnly = True
             Next
 
-            ' Make specific columns editable - adjust column names/indices based on your actual data
-            SetEditableColumn("ItemCode", 1)     ' ItemCode column
-            SetEditableColumn("AccountNumber", 4) ' AccountNumber column
-            SetEditableColumn("Quantity", 5)      ' Quantity column
+            SetEditableColumn("ItemCode", 1)
+            SetEditableColumn("AccountNumber", 4)
+            SetEditableColumn("Quantity", 5)
 
-            ' Optional: Set better header names if needed
             If .Columns.Contains("ItemCode") Then
                 .Columns("ItemCode").HeaderText = "Item Code (Editable)"
             End If
@@ -463,6 +576,15 @@ Public Class Internal_Usage
             End If
             If .Columns.Contains("Quantity") Then
                 .Columns("Quantity").HeaderText = "Quantity (Editable)"
+            End If
+
+            If Not .Columns.Contains("Error") Then
+                Dim errorColumn As New DataGridViewTextBoxColumn()
+                errorColumn.Name = "Error"
+                errorColumn.HeaderText = "Error Messages"
+                errorColumn.ReadOnly = True
+                errorColumn.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                .Columns.Add(errorColumn)
             End If
         End With
     End Sub
@@ -475,40 +597,26 @@ Public Class Internal_Usage
         End If
     End Sub
 
-
     Private Sub btn_export_template_excel_Click(sender As Object, e As EventArgs) Handles btn_export_template_excel.Click
         Try
-            ' Create a new SaveFileDialog to let the user choose where to save the Excel file
             Dim sfd As New SaveFileDialog
             sfd.Filter = "Excel Files (*.xlsx)|*.xlsx"
             sfd.FileName = "Internal_Usage_Template.xlsx"
             sfd.Title = "Save Excel Template"
 
             If sfd.ShowDialog = DialogResult.OK Then
-                ' Use ClosedXML to create an Excel file
-                Using wb As New ClosedXML.Excel.XLWorkbook()
-                    Dim ws As ClosedXML.Excel.IXLWorksheet = wb.Worksheets.Add("Invoice Template")
-
-                    ' Define the headers based on the provided structure
+                Using wb As New XLWorkbook()
+                    Dim ws As IXLWorksheet = wb.Worksheets.Add("Invoice Template")
                     Dim headers As String() = {"NO", "ItemCode", "ItemName", "Location", "AccountNumber", "Quantity", "Comments"}
-
-                    ' Write headers to the first row
                     For colIndex As Integer = 0 To headers.Length - 1
                         ws.Cell(1, colIndex + 1).Value = headers(colIndex)
                     Next
-
-                    ' Optional: Format the header row
                     Dim headerRange = ws.Range(1, 1, 1, headers.Length)
                     headerRange.Style.Font.Bold = True
-                    headerRange.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.LightBlue
-                    headerRange.Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center
-
-                    ' Auto-adjust column widths based on content
+                    headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue
+                    headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center
                     ws.Columns().AdjustToContents()
-
-                    ' Save the workbook to the selected file path
                     wb.SaveAs(sfd.FileName)
-
                     MessageBox.Show("Excel template exported successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 End Using
             End If
